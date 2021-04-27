@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use structopt::{clap::arg_enum, StructOpt};
 use stylua_lib::{format_code, Config, Range};
 
+mod config;
 mod output_diff;
 
 #[derive(StructOpt, Debug)]
@@ -129,34 +130,8 @@ fn format(opt: Opt) -> Result<i32> {
     }
 
     let config: Config = match opt.config_path {
-        Some(config_path) => match fs::read_to_string(config_path) {
-            Ok(contents) => match toml::from_str(&contents) {
-                Ok(config) => config,
-                Err(error) => {
-                    return Err(format_err!(
-                        "error: config file not in correct format: {}",
-                        error
-                    ));
-                }
-            },
-            Err(error) => {
-                return Err(format_err!("error: couldn't read config file: {}", error));
-            }
-        },
-
-        None => match fs::read_to_string("stylua.toml") {
-            Ok(contents) => match toml::from_str(&contents) {
-                Ok(config) => config,
-                Err(error) => {
-                    return Err(format_err!(
-                        "error: config file not in correct format: {}",
-                        error
-                    ));
-                }
-            },
-
-            Err(_) => Config::default(),
-        },
+        Some(path) => config::read_from_path(&path)?,
+        None => config::read()?,
     };
 
     // Create range if provided
